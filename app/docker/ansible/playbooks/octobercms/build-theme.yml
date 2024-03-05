@@ -1,0 +1,10 @@
+- name: 'Build theme in development'
+  when:
+    - env != "production"
+  raw: "cd ../../../themes/{{ ACTIVE_THEME }} && npm i && npm run development"
+- name: 'Build theme in production'
+  when:
+    - env == "production"
+  raw: "cd ../../../themes/{{ ACTIVE_THEME }} && npm i && npm run production"
+- name: 'Clean node modules'
+  raw: "rm -rf ../../../themes/{{ ACTIVE_THEME }}/node_modules"

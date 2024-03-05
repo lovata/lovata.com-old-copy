@@ -1,0 +1,35 @@
+- name: 'Add docker host'
+  hosts: localhost
+  tasks:
+      # Gather facts
+      - name: 'Include global vars'
+        include_vars:
+            dir: ./../../vars/global
+      - name: 'Get container status'
+        docker_container_info:
+            name: "{{ SHORT_PROJECT_NAME }}_backend_app_1"
+        register: status
+      - add_host:
+            env: "{{ env }}"
+            hostname: "backend_app"
+            ansible_connection: "docker"
+            ansible_host: "{{ SHORT_PROJECT_NAME }}{{ (status.exists)|ternary('_', '-') }}backend_app{{ (status.exists)|ternary('_', '-') }}1"
+            ansible_python_interpreter: "/usr/bin/python3"
+- name: 'Connect to docker backend_app and create database'
+  hosts: backend_app
+  remote_user: sail
+  gather_facts: no
+  tasks:
+    # Gather facts
+    - name: 'Include global vars'
+      include_vars:
+          dir: ./../../vars/global
+    - name: 'Include environment vars'
+      include_vars:
+          dir: ./../../vars/{{ env }}
+    - name: 'Run dump script'
+      when: DATABASE_TYPE == 'mysql'
+      raw: "mysql -hmysql -u{{ DB_USERNAME }} --password={{ DB_PASSWORD }} {{ DB_DATABASE }} < /home/sail/temp/db/dump.sql"
+    - name: 'Run dump script'
+      when: DATABASE_TYPE == 'mariadb'
+      raw: "mysql -hmariadb -u{{ DB_USERNAME }} --password={{ DB_PASSWORD }} {{ DB_DATABASE }} < /home/sail/temp/db/dump.sql"

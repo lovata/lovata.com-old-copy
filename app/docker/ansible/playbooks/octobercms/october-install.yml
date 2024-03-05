@@ -1,0 +1,4 @@
+- name: 'Run migrations'
+  raw: "cd ../../../ && php artisan october:migrate"
+  when:
+      - env == "local"

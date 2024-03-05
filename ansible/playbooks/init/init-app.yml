@@ -1,0 +1,26 @@
+- name: 'Create app config'
+  hosts: localhost
+  tasks:
+    - name: 'Get user ID'
+      when: ansible_os_family != "Windows"
+      command: id -u
+      register: CURRENT_USER_ID
+    # Gather facts
+    - name: 'Include global vars'
+      include_vars:
+        dir: ./../../vars/global
+    - name: 'Include environment vars'
+      include_vars:
+        dir: ./../../vars/{{ env }}
+
+    - name: 'Create .env file for application'
+      template:
+        src: ./../../templates/app/{{ env }}.env.j2
+        dest: ./../../../app/.env
+        force: true
+
+    - name: 'Create auth.json file for application'
+      template:
+        src: ./../../templates/app/auth.json.j2
+        dest: ./../../../app/auth.json
+        force: true

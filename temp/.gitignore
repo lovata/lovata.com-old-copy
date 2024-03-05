@@ -1,0 +1,8 @@
+*
+!.gitignore
+!db
+!db/*
+!db/scripts/*.sql
+db/*.sql
+!readme
+!readme/*

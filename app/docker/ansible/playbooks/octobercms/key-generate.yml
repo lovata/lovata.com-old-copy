@@ -1,0 +1,4 @@
+- name: 'Generate secret key'
+  raw: "cd ../../../ && php artisan key:generate"
+  when:
+    - APP_KEY == ""

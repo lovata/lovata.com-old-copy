@@ -1,0 +1,6 @@
+- name: 'Configuration project'
+  hosts: localhost
+  tasks:
+    - include_tasks: project/init-vars.yml
+    - include_tasks: project/env.yml
+    - include_tasks: project/domain-configuration.yml

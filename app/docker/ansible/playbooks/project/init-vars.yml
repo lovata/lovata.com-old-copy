@@ -1,0 +1,6 @@
+- name: 'Include global vars'
+  include_vars:
+    dir: ../../vars/global
+- name: 'Include environment vars'
+  include_vars:
+    dir: ../../vars/{{ env }}

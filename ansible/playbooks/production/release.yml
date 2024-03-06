@@ -24,9 +24,6 @@
     - name: 'Include global vars'
       include_vars:
           dir: ./../../vars/global
-    - name: 'Include environment vars'
-      include_vars:
-          dir: ./../../vars/{{ env }}
     - name: 'Run npm build'
       command: "npm run build"
       args:
@@ -155,6 +152,11 @@
             force: yes
 
       # Update build folder
+      - name: 'Copy manifest file'
+        ansible.builtin.copy:
+            src: './../../../app/themes/{{ACTIVE_THEME}}/manifest.json'
+            dest: "{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/"
+            mode: '0644'
       - name: 'Remove build_temp'
         file:
             path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_temp'

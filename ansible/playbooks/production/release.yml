@@ -50,8 +50,8 @@
       - name: 'Create zip file with npm build'
         archive:
             path:
-                - './../../../app/themes/{{ACTIVE_THEME}}/assets/build/*'
-            dest: './../../../app/themes/{{ACTIVE_THEME}}/assets/build.zip'
+                - './../../../app/themes/{{ACTIVE_THEME}}/build/*'
+            dest: './../../../app/themes/{{ACTIVE_THEME}}/build.zip'
             format: zip
       - add_host:
             env: "production"
@@ -59,10 +59,12 @@
             ansible_connection: "ssh"
             ansible_host: "{{ SERVER_IP }}"
             ansible_port: "{{ SERVER_PORT }}"
-            ansible_python_interpreter: "/usr/bin/python"
+            ansible_ssh_pass: "{{ USER_PASSWORD }}"
+            ansible_sudo_pass: "{{ USER_PASSWORD }}"
+            ansible_python_interpreter: "/usr/bin/python3"
 - name: 'Connect to production server'
   hosts: "production_app"
-  remote_user: hostchain
+  remote_user: app_user
   tasks:
       # Gather facts
       - name: 'Include global vars'
@@ -83,11 +85,6 @@
           src: ./../../templates/app/auth.json.j2
           dest: "{{ PATH_TO_PROJECT_FOLDER }}/app/auth.json"
           force: true
-      - name: 'Create .htaccess file'
-        template:
-          src: ./../../templates/apache2/production.htaccess
-          dest: "{{ PATH_TO_PROJECT_FOLDER }}/app/.htaccess"
-          force: true
 
       # Copy archives
       - name: 'Copy vendor folder'
@@ -97,8 +94,8 @@
             mode: '0644'
       - name: 'Copy build folder'
         ansible.builtin.copy:
-            src: './../../../app/themes/{{ACTIVE_THEME}}/assets/build.zip'
-            dest: "{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/"
+            src: './../../../app/themes/{{ACTIVE_THEME}}/build.zip'
+            dest: "{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/"
             mode: '0644'
 
       # Prepare vendor folder
@@ -123,20 +120,20 @@
       # Prepare build folder
       -   name: 'Remove build_new folder'
           file:
-              path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build_new'
+              path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_new'
               state: absent
       -   name: 'Create build_new folder'
           file:
-              path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build_new'
+              path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_new'
               state: directory
       -   name: 'Unzip build folder'
           unarchive:
               remote_src: true
-              dest: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build_new'
-              src: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build.zip'
+              dest: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_new'
+              src: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build.zip'
       -   name: 'Remove build.zip file'
           file:
-              path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build.zip'
+              path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build.zip'
               state: absent
 
       # Update vendor folder
@@ -152,21 +149,20 @@
       # Update project via git
       - name: "Clone app repo"
         git:
-            repo: "git@github.com:lovata/hostchain.com.git"
+            repo: "git@github.com-lovata.com-old-copy:lovata/lovata.com-old-copy.git"
             dest: "{{ PATH_TO_PROJECT_FOLDER }}"
-            version: "master"
-            key_file: "{{ PATH_TO_SSH_KEY }}"
+            version: "main"
             force: yes
 
       # Update build folder
       - name: 'Remove build_temp'
         file:
-            path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build_temp'
+            path: '{{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_temp'
             state: absent
       - name: 'Move build folder to build_temp'
-        command: 'mv {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build_temp'
+        command: 'mv {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_temp'
       - name: 'Move build_new folder to build'
-        command: 'mv {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build_new {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/assets/build'
+        command: 'mv {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build_new {{ PATH_TO_PROJECT_FOLDER }}/app/themes/{{ACTIVE_THEME}}/build'
 - name: 'Remove archives'
   hosts: localhost
   tasks:
@@ -176,5 +172,5 @@
             state: absent
       - name: 'Remove build.zip file'
         file:
-            path: './../../../app/themes/{{ACTIVE_THEME}}/assets/build.zip'
+            path: './../../../app/themes/{{ACTIVE_THEME}}/build.zip'
             state: absent

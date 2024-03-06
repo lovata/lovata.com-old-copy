@@ -29,6 +29,10 @@ app-apply-dump:
 production-release:
 	docker-compose up -d backend_app
 	ansible-playbook --vault-id .vault-password-production ansible/playbooks/production/release.yml -i ansible/production-hosts.yml
+production-init:
+	ansible-playbook --vault-id .vault-password-production ansible/playbooks/init/init-docker.yml -i ansible/production-hosts.yml
+	ansible-playbook --vault-id .vault-password-production ansible/playbooks/production/init-nginx.yml -i ansible/production-hosts.yml
+	ansible-playbook --vault-id .vault-password-production ansible/playbooks/init/init-app.yml -i ansible/production-hosts.yml
 
 # Docker commands
 docker-status:

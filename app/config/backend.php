@@ -117,7 +117,7 @@ return [
     |
     */
 
-    'force_mail_setting' => false,
+    'force_mail_setting' => env('FORCE_MAIL_SETTINGS', false),
 
     /*
     |--------------------------------------------------------------------------

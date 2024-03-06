@@ -1,9 +1,0 @@
-- name: 'Run composer install to local environment'
-  when:
-    - env == "local"
-  raw: "cd ../../../ && composer install"
-
-- name: 'Run composer install to development environment'
-  when:
-    - env == "development"
-  raw: "cd ../../../ && composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --no-scripts"

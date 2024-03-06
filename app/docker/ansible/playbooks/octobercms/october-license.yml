@@ -1,4 +1,0 @@
-- name: 'Generate secret key'
-  raw: "cd ../../../ && composer config http-basic.{{LICENSE_SERVER}} {{LICENSE_PROJECT}} {{LICENSE_TOKEN}}"
-  when:
-      - env == "development" or env == "production"

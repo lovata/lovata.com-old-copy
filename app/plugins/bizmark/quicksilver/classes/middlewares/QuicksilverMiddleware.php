@@ -11,14 +11,21 @@ use BizMark\Quicksilver\Classes\Contracts\Quicksilver;
  */
 class QuicksilverMiddleware
 {
+    /**
+     * The Quicksilver cache interface instance.
+     *
+     * @var Quicksilver
+     */
+    protected $cache;
 
     /**
      * Middleware constructor.
      *
      * @param Quicksilver $cache
      */
-    public function __construct(protected Quicksilver $cache)
+    public function __construct(Quicksilver $cache)
     {
+        $this->cache = $cache;
     }
 
     /**
@@ -34,13 +41,12 @@ class QuicksilverMiddleware
             return $this->cache->get($request);
         }
 
-        return $next($request);
-    }
+        $response = $next($request);
 
-    public function terminate(Request $request, $response)
-    {
-        if (!$this->cache->has($request) && $this->cache->validate($request, $response)) {
+        if ($this->cache->validate($request, $response)) {
             $this->cache->store($request, $response);
         }
+
+        return $response;
     }
 }

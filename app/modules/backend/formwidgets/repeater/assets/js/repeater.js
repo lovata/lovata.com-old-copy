@@ -4,28 +4,19 @@
 'use strict';
 
 oc.Modules.register('backend.formwidget.repeater.base', function() {
-    class RepeaterFormWidgetBase extends oc.FoundationPlugin
-    {
-        constructor(element, config) {
-            super(element, config);
-
-            this.$el = $(element);
+    class RepeaterFormWidgetBase extends oc.ControlBase {
+        init() {
+            this.$el = $(this.element);
             this.$itemContainer = $('> .field-repeater-items', this.$el);
             this.itemCount = 0;
             this.canAdd = true;
             this.canRemove = true;
             this.repeaterId = $.oc.domIdManager.generate('repeater');
-
-            this.markDisposable();
-            this.init();
+            this.initDefaults();
         }
 
-        static get DATANAME() {
-            return 'ocRepeater';
-        }
-
-        static get DEFAULTS() {
-            return {
+        initDefaults() {
+            const defaults = {
                 useReorder: true,
                 sortableHandle: '.repeater-item-handle',
                 removeHandler: 'onRemoveItem',
@@ -36,10 +27,16 @@ oc.Modules.register('backend.formwidget.repeater.base', function() {
                 titleFrom: null,
                 minItems: null,
                 maxItems: null
+            };
+
+            for (const key in defaults) {
+                if (this.element.dataset[key] === undefined) {
+                    this.element.dataset[key] = defaults[key];
+                }
             }
         }
 
-        init() {
+        connect() {
             if (this.config.useReorder) {
                 this.bindSorting();
             }
@@ -59,19 +56,18 @@ oc.Modules.register('backend.formwidget.repeater.base', function() {
             this.$toolbar.on('click', '> [data-repeater-cmd=add]', this.proxy(this.onAddItemButton));
             this.$toolbar.on('ajaxDone', '> [data-repeater-cmd=add]', this.proxy(this.onAddItemSuccess));
 
-            this.$el.one('dispose-control', this.proxy(this.dispose));
-
-            this.initToolbarExtensionPoint();
-            this.initExternalToolbarEventBus();
-            this.mountExternalToolbarEventBusEvents();
-
             this.countItems();
             this.togglePrompt();
 
-            this.extendExternalToolbar();
+            // External toolbar
+            setTimeout(() => {
+                this.initToolbarExtensionPoint();
+                this.mountExternalToolbarEventBusEvents();
+                this.extendExternalToolbar();
+            }, 0);
         }
 
-        dispose() {
+        disconnect() {
             if (this.config.useReorder) {
                 this.sortable.destroy();
             }
@@ -90,15 +86,13 @@ oc.Modules.register('backend.formwidget.repeater.base', function() {
             this.$toolbar.off('click', '> [data-repeater-cmd=add]', this.proxy(this.onAddItemButton));
             this.$toolbar.off('ajaxDone', '> [data-repeater-cmd=add]', this.proxy(this.onAddItemSuccess));
 
-            this.$el.off('dispose-control', this.proxy(this.dispose));
             this.$el.removeData('oc.repeater');
             this.unmountExternalToolbarEventBusEvents();
 
             this.$el = null;
             this.$toolbar = null;
             this.$sortableBody = null;
-
-            super.dispose();
+            this.sortable = null;
         }
 
         bindSorting() {
@@ -110,7 +104,12 @@ oc.Modules.register('backend.formwidget.repeater.base', function() {
                 multiDrag: true,
                 avoidImplicitDeselect: true,
                 handle: this.config.sortableHandle,
-                onEnd: this.proxy(this.onSortableEnd)
+                onEnd: this.proxy(this.onSortableEnd),
+
+                // Auto scroll plugin
+                forceAutoScrollFallback: true,
+                scrollSensitivity: 60,
+                scrollSpeed: 20
             });
         }
 
@@ -440,29 +439,15 @@ oc.Modules.register('backend.formwidget.repeater.base', function() {
                 return;
             }
 
-            // Expected format: tailor.app::toolbarExtensionPoint
-            const parts = this.config.externalToolbarAppState.split('::');
-            if (parts.length !== 2) {
-                throw new Error('Invalid externalToolbarAppState format. Expected format: module.name::stateElementName');
+            const point = $.oc.vueUtils.getToolbarExtensionPoint(
+                this.config.externalToolbarAppState,
+                this.$el.get(0)
+            );
+
+            if (point) {
+                this.toolbarExtensionPoint = point.state;
+                this.externalToolbarEventBusObj = point.bus;
             }
-
-            const app = oc.Modules.import(parts[0]);
-            this.toolbarExtensionPoint = app.state[parts[1]];
-        }
-
-        initExternalToolbarEventBus() {
-            if (!this.config.externalToolbarEventBus) {
-                return;
-            }
-
-            // Expected format: tailor.app::eventBus
-            const parts = this.config.externalToolbarEventBus.split('::');
-            if (parts.length !== 2) {
-                throw new Error('Invalid externalToolbarEventBus format. Expected format: module.name::stateElementName');
-            }
-
-            const module = oc.Modules.import(parts[0]);
-            this.externalToolbarEventBusObj = module.state[parts[1]];
         }
 
         mountExternalToolbarEventBusEvents() {

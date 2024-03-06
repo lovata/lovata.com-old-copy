@@ -17,9 +17,11 @@ class GlobalComponent extends ComponentModuleBase
     {
         return [
             'name' => 'Global',
-            'description' => 'Makes globals available to the page.'
+            'description' => 'Makes globals available to the page.',
+            'icon' => 'icon-cogs'
         ];
     }
+
     /**
      * defineProperties
      */

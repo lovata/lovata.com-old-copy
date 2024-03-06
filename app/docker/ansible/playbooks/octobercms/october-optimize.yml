@@ -1,2 +1,0 @@
-- name: 'OctoberCMS Optimization'
-  raw: "cd ../../../ && php artisan optimize"

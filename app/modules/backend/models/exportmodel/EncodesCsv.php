@@ -5,6 +5,7 @@ use Config;
 use League\Csv\Writer as CsvWriter;
 use League\Csv\CharsetConverter;
 use SplTempFileObject;
+use SystemException;
 
 /**
  * EncodesCsv format for export
@@ -77,13 +78,7 @@ trait EncodesCsv
         ], $options);
 
         // Prepare CSV
-        if ($options['savePath']) {
-            $csv = CsvWriter::createFromPath($options['savePath'], 'w+');
-        }
-        else {
-            $csv = CsvWriter::createFromFileObject(new SplTempFileObject);
-        }
-
+        $csv = CsvWriter::createFromFileObject(new SplTempFileObject);
         $csv->setOutputBOM(CsvWriter::BOM_UTF8);
 
         if ($options['delimiter'] !== null) {
@@ -120,8 +115,16 @@ trait EncodesCsv
             return;
         }
 
-        // Saved to file
-        if ($options['savePath']) {
+        // Save to file
+        if ($path = $options['savePath']) {
+            $resource = @fopen($path, 'w+');
+            if (!is_resource($resource)) {
+                throw new SystemException("{$path}: failed to open stream for export: No such file or directory.");
+            }
+            foreach ($csv->chunk(8192) as $chunk) {
+                fwrite($resource, $chunk);
+            }
+            fclose($resource);
             return;
         }
 

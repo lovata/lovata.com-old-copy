@@ -77,19 +77,10 @@ class PluginRefresh extends Command
 
         $this->components->info('Rolling back app migrations.');
 
-        // This method attempts to roll back everything, as per Laravel monolith logic,
-        // so silence the command to ignore "Migration not found" errors.
-        $migrator = App::make('migrator');
-
-        // @todo Potential issue here since a migration file collision could unintentionally
-        // rollback a core module migration. Ideally the migration table needs to be extended
-        // to include a module/namespace column to correctly isolate migrations from each other.
-        // $migrator->setOutput($this->output);
-
-        $migrator->reset((array) app_path('database/migrations'));
+        $manager = UpdateManager::instance()->setNotesCommand($this);
+        $manager->rollbackApp();
 
         if (!$this->isRollback()) {
-            $manager = UpdateManager::instance()->setNotesCommand($this);
             $manager->migrateApp();
             $manager->seedApp();
         }
@@ -108,7 +99,8 @@ class PluginRefresh extends Command
         }
 
         $message = "This will DESTROY database tables for plugin [{$name}].";
-        if ($toVersion = $this->option('rollback')) {
+        if ($this->isRollback()) {
+            $toVersion = $this->option('rollback');
             $message = "This will DESTROY database tables for plugin [{$name}] up to version [{$toVersion}].";
         }
 
@@ -125,7 +117,7 @@ class PluginRefresh extends Command
     }
 
     /**
-     * handleRollback performs a database rollback
+     * handleRefresh performs a database rollback
      */
     protected function handleRefresh($name)
     {
@@ -135,7 +127,7 @@ class PluginRefresh extends Command
 
         // Rerun migration
         $this->line('Reinstalling plugin...');
-        $manager->updatePlugin($name);
+        $manager->migratePlugin($name);
     }
 
     /**

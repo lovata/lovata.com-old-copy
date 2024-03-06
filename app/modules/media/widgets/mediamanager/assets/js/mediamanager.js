@@ -1,7 +1,7 @@
 /*
  * Media manager control class
  *
- * Dependences:
+ * Dependencies:
  * - Scrollpad (october.scrollpad.js)
  */
 +function ($) { "use strict";
@@ -833,7 +833,7 @@
             message = 'Error uploading file'
         }
 
-        $.oc.alert(message)
+        oc.alert(message)
     }
 
     //
@@ -841,24 +841,24 @@
     //
 
     MediaManager.prototype.cropSelectedImage = function(callback) {
-        var selectedItems = this.getSelectedItems(true)
+        var selectedItems = this.getSelectedItems(true);
 
         if (selectedItems.length != 1) {
-            alert(this.options.selectSingleImage)
-            return
+            alert(this.options.selectSingleImage);
+            return;
         }
 
         if (selectedItems[0].getAttribute('data-document-type') !== 'image') {
-            alert(this.options.selectionNotImage)
-            return
+            alert(this.options.selectionNotImage);
+            return;
         }
 
-        var path = selectedItems[0].getAttribute('data-path')
+        var path = selectedItems[0].getAttribute('data-path');
 
         new $.oc.mediaManager.imageCropPopup(path, {
-                alias: this.options.alias,
-                onDone: callback
-            })
+            alias: this.options.alias,
+            onDone: callback
+        });
     }
 
     MediaManager.prototype.onImageCropped = function(result) {
@@ -911,16 +911,17 @@
         var items = this.$el.get(0).querySelectorAll('[data-type="media-item"].selected')
 
         if (!items.length) {
-            $.oc.alert(this.options.deleteEmpty)
+            oc.alert(this.options.deleteEmpty)
             return
         }
 
-        $.oc.confirm(this.options.deleteConfirm, this.proxy(this.deleteConfirmation))
+        oc.confirm(this.options.deleteConfirm, this.proxy(this.deleteConfirmation))
     }
 
-    MediaManager.prototype.deleteConfirmation = function(confirmed) {
-        if (!confirmed)
-            return
+    MediaManager.prototype.deleteConfirmation = function(isConfirm) {
+        if (!isConfirm) {
+            return;
+        }
 
         var items = this.$el.get(0).querySelectorAll('[data-type="media-item"].selected'),
             paths = []
@@ -937,21 +938,24 @@
         }
 
         var data = {
-                paths: paths
-            }
+            paths: paths
+        };
 
-        $.oc.stripeLoadIndicator.show()
-        this.$form.request(this.options.alias+'::onDeleteItem', {
-            data: data
-        }).always(function() {
-            $.oc.stripeLoadIndicator.hide()
-        }).done(this.proxy(this.afterNavigate))
+        $.oc.stripeLoadIndicator.show();
+        this.$form
+            .request(this.options.alias+'::onDeleteItem', {
+                data: data
+            })
+            .always(function() {
+                $.oc.stripeLoadIndicator.hide()
+            })
+            .done(this.proxy(this.afterNavigate));
     }
 
     MediaManager.prototype.createFolder = function(ev) {
         $(ev.target).popup({
             content: this.$el.find('[data-control="new-folder-template"]').html()
-        })
+        });
     }
 
     MediaManager.prototype.onFolderPopupShown = function(ev, button, popup) {
@@ -990,7 +994,7 @@
         var items = this.$el.get(0).querySelectorAll('[data-type="media-item"].selected')
 
         if (!items.length) {
-            $.oc.alert(this.options.moveEmpty)
+            oc.alert(this.options.moveEmpty)
             return
         }
 

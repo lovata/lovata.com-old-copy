@@ -3,6 +3,7 @@
 use Tailor\Models\EntryRecord;
 use Tailor\Models\RepeaterItem;
 use Tailor\Classes\BlueprintIndexer;
+use Tailor\Classes\Blueprint\StructureBlueprint;
 use Tailor\Classes\Relations\CustomMultiJoinRelation;
 use Tailor\Classes\Relations\CustomNestedJoinRelation;
 use October\Contracts\Element\FormElement;
@@ -90,6 +91,10 @@ class EntriesField extends FallbackField
             ? $this->displayMode
             : 'relation');
 
+        if ($this->displayMode === 'controller') {
+            $this->defineFormFieldAsRelationController($field);
+        }
+
         // @deprecated this should be default
         if ($field->type === 'taglist') {
             $field->customTags(false);
@@ -170,7 +175,7 @@ class EntriesField extends FallbackField
      */
     protected function defineModelRelationship($model)
     {
-        $useMultisite = $this->getSourceBlueprint()->useMultisite();
+        $relatedMultisite = $this->getSourceBlueprint()->useMultisite();
         $isSingular = $this->maxItems === 1;
         $isNested = $model instanceof RepeaterItem;
 
@@ -178,7 +183,7 @@ class EntriesField extends FallbackField
             $model->belongsTo[$this->fieldName] = [
                 EntryRecord::class,
                 'key' => $this->getSingularKeyName(),
-                'otherKey' => $useMultisite ? 'site_root_id' : 'id'
+                'otherKey' => $relatedMultisite ? 'site_root_id' : 'id'
             ];
         }
         elseif ($isNested) {
@@ -186,16 +191,18 @@ class EntriesField extends FallbackField
                 EntryRecord::class,
                 'table' => 'tailor_content_joins',
                 'relationClass' => CustomNestedJoinRelation::class,
-                'relatedKey' => $useMultisite ? 'site_root_id' : 'id'
+                'relatedKey' => $relatedMultisite ? 'site_root_id' : 'id'
             ];
         }
         else {
+            $parentMultisite = $model->getBlueprintDefinition()->useMultisite();
             $model->morphedByMany[$this->fieldName] = [
                 EntryRecord::class,
                 'table' => $model->getBlueprintDefinition()->getJoinTableName(),
                 'name' => $this->fieldName,
                 'relationClass' => CustomMultiJoinRelation::class,
-                'relatedKey' => $useMultisite ? 'site_root_id' : 'id'
+                'relatedKey' => $relatedMultisite ? 'site_root_id' : 'id',
+                'parentKey' => $parentMultisite ? 'site_root_id' : 'id'
             ];
         }
     }
@@ -210,7 +217,7 @@ class EntriesField extends FallbackField
             throw new SystemException("Invalid inverse field '{$this->inverse}' for source '{$this->source}' for '{$this->fieldName}'.");
         }
 
-        $useMultisite = $model->getBlueprintDefinition()->useMultisite();
+        $parentMultisite = $model->getBlueprintDefinition()->useMultisite();
         $isSingular = $this->maxItems === 1;
         $otherIsSingular = $otherField->maxItems === 1;
 
@@ -218,25 +225,67 @@ class EntriesField extends FallbackField
             $model->hasOne[$this->fieldName] = [
                 EntryRecord::class,
                 'key' => $otherField->getSingularKeyName(),
-                'otherKey' => $useMultisite ? 'site_root_id' : 'id'
+                'otherKey' => $parentMultisite ? 'site_root_id' : 'id'
             ];
         }
         elseif ($otherIsSingular) {
             $model->hasMany[$this->fieldName] = [
                 EntryRecord::class,
                 'key' => $otherField->getSingularKeyName(),
-                'otherKey' => $useMultisite ? 'site_root_id' : 'id'
+                'otherKey' => $parentMultisite ? 'site_root_id' : 'id'
             ];
         }
         else {
+            $relatedMultisite = $this->getSourceBlueprint()->useMultisite();
             $model->morphToMany[$this->fieldName] = [
                 EntryRecord::class,
                 'table' => $this->getSourceBlueprint()->getJoinTableName(),
                 'name' => $this->inverse,
                 'relationClass' => CustomMultiJoinRelation::class,
-                'parentKey' => $useMultisite ? 'site_root_id' : 'id'
+                'relatedKey' => $relatedMultisite ? 'site_root_id' : 'id',
+                'parentKey' => $parentMultisite ? 'site_root_id' : 'id'
             ];
         }
+    }
+
+    /**
+     * defineFormFieldAsRelationController
+     */
+    protected function defineFormFieldAsRelationController($field)
+    {
+        $blueprint = $this->getSourceBlueprint();
+
+        $customMessages = array_merge((array) $blueprint->customMessages, (array) $this->customMessages);
+
+        $toolbarButtons = $this->toolbarButtons;
+        if (!$toolbarButtons) {
+            $toolbarButtons = $blueprint->navigation ? 'add|remove' : 'create|delete';
+        }
+
+        $fieldConfig = [
+            'label' => $this->label,
+            'list' => [],
+            'form' => [],
+            'customMessages' => $customMessages,
+            'popupSize' => $this->popupSize,
+            'view' => [
+                'toolbarButtons' => $toolbarButtons,
+                'recordsPerPage' => $this->recordsPerPage,
+            ]
+        ];
+
+        if ($blueprint instanceof StructureBlueprint) {
+            $fieldConfig['structure'] = [
+                'maxDepth' => $blueprint->getMaxDepth(),
+                'showTree' => $blueprint->hasTree(),
+            ] + ((array) $blueprint->structure);
+        }
+
+        if ($this->span === 'adaptive') {
+            $fieldConfig['externalToolbarAppState'] = 'toolbarExtensionPoint';
+        }
+
+        $field->controller($fieldConfig);
     }
 
     /**

@@ -1,7 +1,0 @@
-*
-!build
-!.gitignore
-!Dockerfile
-!php.ini
-!start-container
-!www.conf

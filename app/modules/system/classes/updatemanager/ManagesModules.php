@@ -20,21 +20,43 @@ use Exception;
 trait ManagesModules
 {
     /**
+     * migrateModules migrates all modules
+     */
+    public function migrateModules()
+    {
+        foreach (SystemHelper::listModules() as $module) {
+            $this->migrateModule($module);
+        }
+    }
+
+    /**
      * migrateModule runs migrations on a single module
      */
     public function migrateModule(string $module)
     {
+        $migrator = $this->getMigrator();
+
         // Suppress the "Nothing to migrate" message
         if (isset($this->notesOutput)) {
-            $this->migrator->setOutput(new \Symfony\Component\Console\Output\NullOutput);
+            $migrator->setOutput(new \Symfony\Component\Console\Output\NullOutput);
 
-            Event::listen(\Illuminate\Database\Events\MigrationsStarted::class, function() {
-                $this->migrator->setOutput($this->notesOutput);
+            Event::listen(\Illuminate\Database\Events\MigrationsStarted::class, function() use ($migrator) {
+                $migrator->setOutput($this->notesOutput);
             });
         }
 
-        if ($this->migrator->run(base_path('modules/'.strtolower($module).'/database/migrations'))) {
+        if ($migrator->run(base_path('modules/'.strtolower($module).'/database/migrations'))) {
             $this->migrateCount++;
+        }
+    }
+
+    /**
+     * seedModules seeds all modules
+     */
+    public function seedModules()
+    {
+        foreach (SystemHelper::listModules() as $module) {
+            $this->seedModule($module);
         }
     }
 
@@ -92,7 +114,7 @@ trait ManagesModules
     }
 
     /**
-     * setBuildNumberManually asks the gateway for the lastest build number and stores it.
+     * setBuildNumberManually asks the gateway for the latest build number and stores it.
      */
     public function setBuildNumberManually()
     {
@@ -100,13 +122,8 @@ trait ManagesModules
 
         try {
             // List packages to find version string from october/rain
-            $packages = ComposerManager::instance()->listAllPackages();
-            foreach ($packages as $package) {
-                $packageName = $package['name'] ?? null;
-                if (mb_strtolower($packageName) === 'october/system') {
-                    $version = $package['version'] ?? null;
-                }
-            }
+            $versions = ComposerManager::instance()->getPackageVersions(['october/system']);
+            $version = $versions['october/system'] ?? null;
 
             if ($version === null) {
                 throw new SystemException('Package october/system not found in composer');

@@ -15,6 +15,11 @@ use Tailor\Models\EntryRecord;
 trait PageManagerRegistry
 {
     /**
+     * @var array pageManagerReplacementCache stores blueprint replacements for multiple model lookups
+     */
+    protected static $pageManagerReplacementCache = [];
+
+    /**
      * listPrimaryNavigation
      */
     public function listPageManagerTypes(): array
@@ -144,7 +149,13 @@ trait PageManagerRegistry
             return [];
         }
 
-        $record = $query->find($item->reference);
+        if ($model->isClassInstanceOf(\October\Contracts\Database\MultisiteInterface::class)) {
+            $record = $query->applyOtherSiteRoot($item->reference)->first();
+        }
+        else {
+            $record = $query->find($item->reference);
+        }
+
         if (!$record) {
             return [];
         }
@@ -212,17 +223,13 @@ trait PageManagerRegistry
      */
     protected static function getPageManagerPageUrl($pageCode, $record, $theme)
     {
-        $url = Cms::pageUrl($pageCode, [
-            'id' => $record->id,
-            'slug' => $record->slug,
-            'fullslug' => $record->fullslug
-        ]);
+        $replacements = static::makeReplacementsForRecord($record);
 
-        return $url;
+        return Cms::pageUrl($pageCode, $replacements);
     }
 
     /**
-     * getPageManagerPageUrl
+     * getPageManagerSites
      */
     protected static function getPageManagerSites($pageCode, $record, $theme): array
     {
@@ -252,11 +259,9 @@ trait PageManagerRegistry
                 continue;
             }
 
-            $url = Cms::siteUrl($page, $site, [
-                'id' => $otherRecord->id,
-                'slug' => $otherRecord->slug,
-                'fullslug' => $otherRecord->fullslug
-            ]);
+            $replacements = static::makeReplacementsForRecord($otherRecord);
+
+            $url = Cms::siteUrl($page, $site, $replacements);
 
             $result[] = [
                 'url' => $url,
@@ -298,5 +303,30 @@ trait PageManagerRegistry
         }
 
         return '';
+    }
+
+    /**
+     * makeReplacementsForRecord builds an array of replacements for a given record
+     */
+    protected static function makeReplacementsForRecord($record): array
+    {
+        $replacements = [
+            'id' => $record->id,
+            'code' => $record->code,
+            'slug' => $record->slug,
+            'fullslug' => $record->fullslug
+        ];
+
+        // Process custom replacements from blueprint
+        if ($record instanceof EntryRecord) {
+            $wantReplace = static::$pageManagerReplacementCache[$record->uuid]
+                ??= $record->getBlueprintDefinition()->getPageFinderReplacements();
+
+            foreach ($wantReplace as $key => $path) {
+                $replacements[$key] = array_get($record, $path);
+            }
+        }
+
+        return $replacements;
     }
 }

@@ -28,10 +28,13 @@ class BrandSetting extends SettingModel
     public $settingsCode = 'backend_brand_settings';
 
     /**
-     * @var mixed settingsFields defition file
+     * @var mixed settingsFields definition file
      */
     public $settingsFields = 'fields.yaml';
 
+    /**
+     * @var array attachOne relations
+     */
     public $attachOne = [
         'favicon' => \System\Models\File::class,
         'logo' => \System\Models\File::class,
@@ -121,11 +124,15 @@ class BrandSetting extends SettingModel
     {
         $settings = self::instance();
 
+        if (isset($_COOKIE['admin_color_mode_user'])) {
+            return $_COOKIE['admin_color_mode_user'];
+        }
+
         if (
             $settings->color_mode === 'auto' &&
-            isset($_COOKIE['admin_color_mode'])
+            isset($_COOKIE['admin_color_mode_setting'])
         ) {
-            return (string) $_COOKIE['admin_color_mode'];
+            return (string) $_COOKIE['admin_color_mode_setting'];
         }
 
         return (string) $settings->color_mode;
@@ -145,7 +152,7 @@ class BrandSetting extends SettingModel
                 return $settings->favicon->getPath();
             }
 
-            return self::getBaseConfigPath('favicon_path');
+            return self::getBaseConfigPath('favicon_path', '');
         });
     }
 
@@ -177,7 +184,7 @@ class BrandSetting extends SettingModel
                 return $settings->menu_logo->getPath();
             }
 
-            return self::getBaseConfigPath('menu_logo_path');
+            return self::getBaseConfigPath('menu_logo_path', '');
         });
     }
 
@@ -195,7 +202,7 @@ class BrandSetting extends SettingModel
                 return $settings->dashboard_icon->getPath();
             }
 
-            return self::getBaseConfigPath('dashboard_icon_path');
+            return self::getBaseConfigPath('dashboard_icon_path', '');
         });
     }
 
@@ -215,7 +222,7 @@ class BrandSetting extends SettingModel
             return $settings->login_background_wallpaper->getPath();
         }
 
-        return null;
+        return self::getBaseConfigPath('login_background_wallpaper');
     }
 
     /**
@@ -233,12 +240,7 @@ class BrandSetting extends SettingModel
             return $settings->login_custom_image->getPath();
         }
 
-        $customImage = File::symbolizePath(self::getBaseConfig('login_custom_image'));
-        if ($customImage && File::exists($customImage)) {
-            return Url::asset(File::localToPublic($customImage));
-        }
-
-        return null;
+        return self::getBaseConfigPath('login_custom_image');
     }
 
     /**
@@ -250,7 +252,7 @@ class BrandSetting extends SettingModel
             $cacheKey = self::instance()->cacheKey . '.stylesheet';
 
             $customCss = Cache::rememberForever($cacheKey, function() {
-                return self::compileCss();
+                return self::compileCss() ?: '';
             });
         }
         catch (Exception $ex) {
@@ -302,7 +304,7 @@ class BrandSetting extends SettingModel
     }
 
     /**
-     * getLoginPageCustomization returns customization properites used by the login page
+     * getLoginPageCustomization returns customization properties used by the login page
      */
     public static function getLoginPageCustomization()
     {
@@ -340,7 +342,6 @@ class BrandSetting extends SettingModel
         }
 
         $configPath = File::symbolizePath($configValue);
-
         if ($configPath && File::exists($configPath)) {
             return Url::asset(File::localToPublic($configPath));
         }

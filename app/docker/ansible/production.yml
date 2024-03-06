@@ -1,5 +1,0 @@
-all:
-  hosts:
-    localhost:
-      env: production
-      ansible_connection: local

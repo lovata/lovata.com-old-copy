@@ -16,18 +16,39 @@ trait ManagesApp
      */
     public function migrateApp()
     {
+        $migrator = $this->getMigrator();
+
         // Suppress the "Nothing to migrate" message
         if (isset($this->notesOutput)) {
-            $this->migrator->setOutput(new \Symfony\Component\Console\Output\NullOutput);
+            $migrator->setOutput(new \Symfony\Component\Console\Output\NullOutput);
 
-            Event::listen(\Illuminate\Database\Events\MigrationsStarted::class, function() {
-                $this->migrator->setOutput($this->notesOutput);
+            Event::listen(\Illuminate\Database\Events\MigrationsStarted::class, function() use ($migrator) {
+                $migrator->setOutput($this->notesOutput);
             });
         }
 
-        if ($this->migrator->run(app_path('database/migrations'))) {
+        if ($migrator->run(app_path('database/migrations'))) {
             $this->migrateCount++;
         }
+    }
+
+    /**
+     * rollbackPlugin rolls back application migrations
+     */
+    public function rollbackApp()
+    {
+        // This method attempts to roll back everything, as per Laravel monolith logic,
+        // so silence the command to ignore "Migration not found" errors.
+        $migrator = App::make('migrator');
+
+        // if (isset($this->notesOutput)) {
+        //     $migrator->setOutput($this->notesOutput);
+        // }
+
+        // @todo Potential issue here since a migration file collision could unintentionally
+        // rollback a core module migration. Ideally the migration table needs to be extended
+        // to include a module/namespace column to correctly isolate migrations from each other.
+        $migrator->reset((array) app_path('database/migrations'));
     }
 
     /**

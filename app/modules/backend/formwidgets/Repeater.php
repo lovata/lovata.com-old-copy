@@ -89,18 +89,10 @@ class Repeater extends FormWidgetBase
     /**
      * @var string Defines a mount point for the editor toolbar.
      * Must include a module name that exports the Vue application and a state element name.
-     * Format: module.name::stateElementName
+     * Format: stateElementName
      * Only works in Vue applications and form document layouts.
      */
     public $externalToolbarAppState = null;
-
-    /**
-     * @var string Defines an event bus for an external toolbar.
-     * Must include a module name that exports the Vue application and a state element name.
-     * Format: module.name::eventBus
-     * Only works in Vue applications and form document layouts.
-     */
-    public $externalToolbarEventBus = null;
 
     //
     // Object Properties
@@ -169,8 +161,7 @@ class Repeater extends FormWidgetBase
             'minItems',
             'maxItems',
             'useTabs',
-            'externalToolbarAppState',
-            'externalToolbarEventBus'
+            'externalToolbarAppState'
         ]);
 
         if ($this->formField->disabled) {
@@ -223,7 +214,6 @@ class Repeater extends FormWidgetBase
         $this->vars['showReorder'] = $this->showReorder;
         $this->vars['showDuplicate'] = $this->showDuplicate;
         $this->vars['externalToolbarAppState'] = $this->externalToolbarAppState;
-        $this->vars['externalToolbarEventBus'] = $this->externalToolbarEventBus;
     }
 
     /**
@@ -299,10 +289,6 @@ class Repeater extends FormWidgetBase
      */
     protected function processSaveValue($value)
     {
-        if (!is_array($value) || !$value) {
-            return null;
-        }
-
         return $this->useRelation
             ? $this->processSaveForRelation($value)
             : $this->processSaveForJson($value);
@@ -317,22 +303,6 @@ class Repeater extends FormWidgetBase
             ? $this->getLoadValueFromRelation()
             : $this->getLoadValue();
 
-        // This lets record finder work inside a repeater with some hacks
-        // since record finder spawns outside the form and its AJAX calls
-        // don't reinitialize this repeater's items. We a need better way
-        // remove if year >= 2025 @deprecated -sg
-        $handler = $this->controller->getAjaxHandler();
-        if (!$this->isLoaded && starts_with($handler, $this->alias . 'Form')) {
-            $handler = str_after($handler, $this->alias . 'Form');
-            preg_match("~^(\d+)~", $handler, $matches);
-
-            if (isset($matches[1])) {
-                $index = $matches[1];
-                $this->makeItemFormWidget($index);
-                unset($this->formWidgets[$index]);
-            }
-        }
-
         // Pad current value with minimum items and disable for groups,
         // which cannot predict their item types
         if (!$this->useGroups && $this->minItems > 0) {
@@ -340,8 +310,9 @@ class Repeater extends FormWidgetBase
                 $currentValue = [];
             }
 
+            $emptyItem = $this->useRelation ? $this->getRelationModel() : [];
             if (count($currentValue) < $this->minItems) {
-                $currentValue = array_pad($currentValue, $this->minItems, []);
+                $currentValue = array_pad($currentValue, $this->minItems, $emptyItem);
             }
         }
 
@@ -391,6 +362,7 @@ class Repeater extends FormWidgetBase
         $config->arrayName = $this->getFieldName().'['.$index.']';
         $config->sessionKey = $this->sessionKey;
         $config->sessionKeySuffix = $this->sessionKeySuffix . '-' . $index;
+        $config->parentFieldName = $this->formField->fieldName;
 
         $widget = $this->makeWidget(\Backend\Widgets\Form::class, $config);
         $widget->previewMode = $this->previewMode;
@@ -400,7 +372,8 @@ class Repeater extends FormWidgetBase
         ];
 
         // Convert to tabbed config
-        if ($this->useTabs || ($config->useTabs ?? false)) {
+        $useTabs = isset($config->useTabs) ? $config->useTabs : $this->useTabs;
+        if ($useTabs) {
             $widget->bindEvent('form.extendFields', function() use ($widget) {
                 $this->moveTabbedFormFields($widget, 'outside', 'secondary');
             });
@@ -589,13 +562,17 @@ class Repeater extends FormWidgetBase
             }
 
             foreach ($groups as $code => $config) {
+                if (str_starts_with($code, '_')) {
+                    continue;
+                }
+
                 if (is_string($config)) {
                     $config = $this->makeConfig($config);
                 }
 
                 $palette[$code] = ['code' => $code] + ((array) $config) + [
                     'name' => '',
-                    'icon' => 'icon-square-o',
+                    'icon' => 'icon-square',
                     'description' => '',
                     'titleFrom' => '',
                     'fields' => [],

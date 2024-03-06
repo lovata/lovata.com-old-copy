@@ -1,4 +1,0 @@
-- name: 'Run composer update to local environment'
-  when:
-    - env == "local"
-  raw: "cd ../../../ && composer update"

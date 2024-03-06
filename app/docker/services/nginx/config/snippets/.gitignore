@@ -1,9 +1,0 @@
-*
-!.gitignore
-!whitelist.conf
-!php.conf
-!static.conf
-!graphql.conf
-!mailhog.conf
-!gzip.conf
-!redirects.conf

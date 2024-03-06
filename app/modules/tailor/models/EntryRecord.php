@@ -7,7 +7,7 @@ use October\Contracts\Element\FilterElement;
 use Tailor\Classes\BlueprintModel;
 use Tailor\Classes\BlueprintIndexer;
 use Tailor\Classes\Scopes\EntryRecordScope;
-use ApplicationException;
+use SystemException;
 
 /**
  * EntryRecord model for content
@@ -21,6 +21,7 @@ class EntryRecord extends BlueprintModel
     use \Tailor\Traits\NestedTreeModel;
     use \Tailor\Traits\VersionableModel;
     use \Tailor\Traits\DeferredContentModel;
+    use \Tailor\Models\EntryRecord\HasDuplication;
     use \Tailor\Models\EntryRecord\HasStatusScopes;
     use \Tailor\Models\EntryRecord\HasEntryBlueprint;
     use \October\Rain\Database\Traits\Multisite;
@@ -126,7 +127,7 @@ class EntryRecord extends BlueprintModel
     {
         $entryName = $this->getContentFieldsetDefinition()->name ?? '';
 
-        $host->addFormField('title', 'Title')->autoFocus()->cssClass('primary-title-field')->placeholder(__("New :name Entry", ['name' => __($entryName)]));
+        $host->addFormField('title', 'Title')->autoFocus()->cssClass('primary-title-field')->placeholder(__("Create :name Entry", ['name' => __($entryName)]));
         $this->applyCoreFieldModifiers($host);
     }
 
@@ -162,6 +163,8 @@ class EntryRecord extends BlueprintModel
     protected function applyCoreFieldModifiers(FormElement $host)
     {
         $toTransfer = [
+            'scope',
+            'column',
             'default',
             'label',
             'comment',
@@ -279,7 +282,7 @@ class EntryRecord extends BlueprintModel
     {
         $blueprint = BlueprintIndexer::instance()->findSectionByHandle($handle);
         if (!$blueprint) {
-            throw new ApplicationException("Section handle [{$handle}] not found");
+            throw new SystemException("Section handle [{$handle}] not found");
         }
 
         return static::inSectionUuid($blueprint->uuid);
@@ -304,7 +307,7 @@ class EntryRecord extends BlueprintModel
     {
         $blueprint = BlueprintIndexer::instance()->findSectionByHandle($handle);
         if (!$blueprint) {
-            throw new ApplicationException("Section handle [{$handle}] not found");
+            throw new SystemException("Section handle [{$handle}] not found");
         }
 
         self::extendInSectionUuid($blueprint->uuid, $callback);
@@ -398,7 +401,7 @@ class EntryRecord extends BlueprintModel
     {
         $blueprint = BlueprintIndexer::instance()->findSectionByHandle($handle);
         if (!$blueprint) {
-            throw new ApplicationException("Section handle [{$handle}] not found");
+            throw new SystemException("Section handle [{$handle}] not found");
         }
 
         return static::findSingleForSectionUuid($blueprint->uuid);
@@ -480,5 +483,13 @@ class EntryRecord extends BlueprintModel
     public function isMultisiteSyncEnabled()
     {
         return $this->useMultisiteSync();
+    }
+
+    /**
+     * getMultisiteConfig returns an sync option configured for multisite
+     */
+    public function getMultisiteConfig($key, $default = null)
+    {
+        return $this->getBlueprintDefinition()->getMultisiteConfig($key, $default);
     }
 }

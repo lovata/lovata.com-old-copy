@@ -3,13 +3,21 @@
 # ===================================
 
 columns:
+    id:
+        label: ID
+        invisible: true
+
+    group:
+        label: Group
+        relation: group
+        select: name
+        invisible: true
+
     name:
         label: Name
         searchable: true
-
-    code:
-        label: Code
-        searchable: true
+        type: partial
+        path: column_name
 
     theme:
         label: Theme
@@ -29,6 +37,24 @@ columns:
         sortable: false
         attributes:
             target: _blank
+
+    code:
+        label: Code
+        searchable: true
+        invisible: true
+
+    allow_roles:
+        label: Roles
+        type: selectable
+        invisible: true
+
+    created_at:
+        label: Created At
+        invisible: true
+
+    updated_at:
+        label: Updated At
+        invisible: true
 
     status_code:
         label: Status

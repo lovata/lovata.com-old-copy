@@ -1,7 +1,0 @@
-*
-!.gitignore
-!Dockerfile
-!php.ini
-!start-container
-!www.conf
-!nginx.conf

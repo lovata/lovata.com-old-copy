@@ -50,11 +50,6 @@ abstract class PluginTestCase extends TestCase
      */
     public function setUp(): void
     {
-        // Force reload of October CMS singletons
-        PluginManager::forgetInstance();
-        UpdateManager::forgetInstance();
-        VersionManager::forgetInstance();
-
         // Reset locals
         $this->pluginTestCaseMigratedPlugins = [];
         $this->pluginTestCaseLoadedPlugins = [];
@@ -104,7 +99,8 @@ abstract class PluginTestCase extends TestCase
             if (
                 !$reflectClass->isInstantiable() ||
                 !$reflectClass->isSubclassOf(\October\Rain\Database\Model::class) ||
-                $reflectClass->isSubclassOf(\October\Rain\Database\Pivot::class)
+                $reflectClass->isSubclassOf(\October\Rain\Database\Pivot::class) ||
+                $reflectClass->isSubclassOf(\PHPUnit\Framework\MockObject\MockObject::class)
             ) {
                 continue;
             }
@@ -123,15 +119,31 @@ abstract class PluginTestCase extends TestCase
     {
         $reflect = new ReflectionClass($this);
         $path = $reflect->getFilename();
-        $basePath = $this->app->pluginsPath();
+        $pluginPath = $this->app->pluginsPath();
 
-        $result = false;
-
-        if (strpos($path, $basePath) === 0) {
-            $result = ltrim(str_replace('\\', '/', substr($path, strlen($basePath))), '/');
+        if (strpos($path, $pluginPath) === 0) {
+            $result = ltrim(str_replace('\\', '/', substr($path, strlen($pluginPath))), '/');
             $result = implode('.', array_slice(explode('/', $result), 0, 2));
+            return $result;
         }
 
-        return $result;
+        return false;
+    }
+
+    /**
+     * isAppCodeFromTest determines if this test is running the app directory
+     * @return string|bool
+     */
+    protected function isAppCodeFromTest()
+    {
+        $reflect = new ReflectionClass($this);
+        $path = $reflect->getFilename();
+        $appPath = $this->app->path();
+
+        if (strpos($path, $appPath) === 0) {
+            return 'app';
+        }
+
+        return false;
     }
 }

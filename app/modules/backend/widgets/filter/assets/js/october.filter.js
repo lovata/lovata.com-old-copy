@@ -4,7 +4,7 @@
  * Data attributes:
  * - data-behavior="filter" - enables the filter plugin
  *
- * Dependences:
+ * Dependencies:
  * - October Popover (october.popover.js)
  *
  */
@@ -315,10 +315,8 @@
             return;
         }
 
-        var self = this,
-            scopeName = $scope.data('scope-name');
-
-        $.oc.stripeLoadIndicator.show();
+        var scopeName = $scope.data('scope-name');
+        this.$el.addClass('is-loading');
 
         // Prepare data with known values
         if (!data) {
@@ -326,17 +324,28 @@
         }
         data.scopeName = scopeName;
 
+        // Submit data
+        var submitData = {
+            data: data,
+        };
+
+        if (this.options.pageName) {
+            submitData.query = {
+                [this.options.pageName]: null
+            };
+        }
+
         // Submit request
-        $el.request(this.options.updateHandler, {
-            data: data
-        })
-        .always(function(){
-            $.oc.stripeLoadIndicator.hide()
-        })
-        .done(function (data) {
-            // Trigger dependsOn updates on successful requests
-            self.$el.find('[data-scope-name="'+scopeName+'"]').trigger('change.oc.filterScope');
-        });
+        $el.request(this.options.updateHandler, submitData)
+            .always(() => {
+                this.$el.removeClass('is-loading');
+            })
+            .done((data) => {
+                // Trigger dependsOn updates on successful requests
+                this.$el
+                    .find('[data-scope-name="'+scopeName+'"]')
+                    .trigger('change.oc.filterScope');
+            });
     }
 
     FilterWidget.prototype.updatePopoverContent = function(content) {
@@ -366,7 +375,8 @@
         popoverTemplate: null,
         optionsHandler: null,
         updateHandler: null,
-        loadHandler: null
+        loadHandler: null,
+        pageName: null
     }
 
     // FILTER WIDGET PLUGIN DEFINITION

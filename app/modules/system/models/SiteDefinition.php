@@ -3,22 +3,43 @@
 use Url;
 use Site;
 use Model;
-use Config;
 use Cms\Classes\Theme;
 use Backend\Models\User;
 use Backend\Models\UserRole;
 use System\Helpers\Preset as PresetHelper;
-use System\Helpers\DateTime as DateTimeHelper;
 use ValidationException;
 
 /**
  * SiteDefinition
+ *
+ * @property int $id
+ * @property string $name
+ * @property string $code
+ * @property int $sort_order
+ * @property bool $is_custom_url
+ * @property string $app_url
+ * @property string $theme
+ * @property string $locale
+ * @property string $timezone
+ * @property bool $is_host_restricted
+ * @property array $allow_hosts
+ * @property bool $is_prefixed
+ * @property string $route_prefix
+ * @property bool $is_styled
+ * @property string $color_foreground
+ * @property string $color_background
+ * @property bool $is_role_restricted
+ * @property array $allow_roles
+ * @property bool $is_primary
+ * @property bool $is_enabled
+ * @property bool $is_enabled_edit
  *
  * @package october\system
  * @author Alexey Bobkov, Samuel Georges
  */
 class SiteDefinition extends Model
 {
+    use \System\Models\SiteDefinition\HasModelAttributes;
     use \October\Rain\Database\Traits\Validation;
     use \October\Rain\Database\Traits\Sortable;
 
@@ -38,6 +59,13 @@ class SiteDefinition extends Model
     public $rules = [
         'code' => 'required',
         'name' => 'required',
+    ];
+
+    /**
+     * @var array belongsTo
+     */
+    public $belongsTo = [
+        'group' => SiteGroup::class
     ];
 
     /**
@@ -76,7 +104,9 @@ class SiteDefinition extends Model
             'code' => 'english',
             'is_primary' => true,
             'is_enabled' => true,
-            'is_enabled_edit' => true
+            'is_enabled_edit' => true,
+            'group_id' => null,
+            'group' => null,
         ];
         $site->syncOriginal();
         return $site;
@@ -105,34 +135,6 @@ class SiteDefinition extends Model
     }
 
     /**
-     * getActiveColorAttribute
-     */
-    public function getActiveColorAttribute()
-    {
-        if ($this->is_styled) {
-            return [$this->color_background, $this->color_foreground];
-        }
-
-        return null;
-    }
-
-    /**
-     * getStatusCodeAttribute
-     */
-    public function getStatusCodeAttribute()
-    {
-        if ($this->is_enabled) {
-            return 'enabled';
-        }
-
-        if ($this->is_enabled_edit) {
-            return 'editable';
-        }
-
-        return 'disabled';
-    }
-
-    /**
      * getStatusNameOptions
      */
     public function getStatusCodeOptions()
@@ -145,58 +147,11 @@ class SiteDefinition extends Model
     }
 
     /**
-     * getBaseUrlAttribute
-     */
-    public function getBaseUrlAttribute()
-    {
-        $appUrl = $this->is_custom_url ? $this->app_url : Url::to('/');
-        $prefix = $this->is_prefixed ? $this->route_prefix : '';
-
-        return rtrim($appUrl . $prefix, '/');
-    }
-
-    /**
-     * getHardLocaleAttribute will always return a locale code no matter what
-     */
-    public function getHardLocaleAttribute()
-    {
-        if ($this->locale) {
-            return $this->locale;
-        }
-
-        return Config::get('app.original_locale', Config::get('app.locale', 'en'));
-    }
-
-    /**
-     * getUrlAttribute
-     */
-    public function getUrlAttribute()
-    {
-        if ($this->urlOverride !== null) {
-            return $this->urlOverride;
-        }
-
-        return $this->base_url;
-    }
-
-    /**
      * setUrlOverride
      */
     public function setUrlOverride(string $url)
     {
         $this->urlOverride = $url;
-    }
-
-    /**
-     * getFlagIconAttribute
-     */
-    public function getFlagIconAttribute()
-    {
-        if (!$this->locale || $this->locale === 'custom') {
-            return '';
-        }
-
-        return PresetHelper::localeIcons()[$this->locale][1] ?? '';
     }
 
     /**
@@ -366,7 +321,7 @@ class SiteDefinition extends Model
     {
         return [
             '' => '— '.__('Use Default').' —',
-        ] + PresetHelper::localeIcons() + [
+        ] + PresetHelper::flags() + [
             'custom' => '— '.__('Use Custom').' —'
         ];
     }
@@ -380,7 +335,7 @@ class SiteDefinition extends Model
             return false;
         }
 
-        return !isset(PresetHelper::localeIcons()[$locale]);
+        return !isset(PresetHelper::flags()[$locale]);
     }
 
     /**
@@ -391,7 +346,7 @@ class SiteDefinition extends Model
     {
         return [
             '' => '— '.__('Use Default').' —',
-        ] + DateTimeHelper::listTimezones();
+        ] + PresetHelper::timezones();
     }
 
     /**

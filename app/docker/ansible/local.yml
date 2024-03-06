@@ -1,5 +1,0 @@
-all:
-  hosts:
-    localhost:
-      env: local
-      ansible_connection: local

@@ -2,6 +2,7 @@
 
 use Lang;
 use Flash;
+use Backend;
 use Redirect;
 use BackendMenu;
 use Tailor\Models\GlobalRecord;
@@ -32,7 +33,7 @@ class Globals extends WildcardController
     public $formConfig = 'config_form.yaml';
 
     /**
-     * @var GlobalBlueprint activeSource
+     * @var \Tailor\Classes\Blueprint\GlobalBlueprint activeSource
      */
     protected $activeSource;
 
@@ -64,7 +65,8 @@ class Globals extends WildcardController
             return;
         }
 
-        $this->pageTitle = 'Update Global';
+        $this->setPageTitleFromMessage('titleUpdateForm', "Update Global");
+        $this->pageSize = Backend::sizeToPixels($this->activeSource->formSize ?? 950) ?: null;
 
         // Uses "create" context to enable default values on newly introduced fields
         $response = $this->asExtension('FormController')->update(null, FormField::CONTEXT_CREATE);
@@ -90,6 +92,16 @@ class Globals extends WildcardController
     public function onSave()
     {
         return $this->asExtension('FormController')->update_onSave();
+    }
+
+    /**
+     * onCancel
+     */
+    public function onCancel()
+    {
+        $this->asExtension('FormController')->update_onCancel();
+
+        return Redirect::refresh();
     }
 
     /**
@@ -171,6 +183,29 @@ class Globals extends WildcardController
         else {
             BackendMenu::setContext('October.Tailor', 'tailor');
         }
+    }
+
+    /**
+     * setPageTitleMessage
+     */
+    protected function setPageTitleFromMessage(string $message, string $defaultMessage = 'Tailor')
+    {
+        $global = $this->activeSource;
+
+        if (!$global) {
+            $this->pageTitle = $defaultMessage;
+            return;
+        }
+
+        $vars = [
+            'name' => $global->name
+        ];
+
+        $this->pageTitle = $global->getMessage(
+            $message,
+            $this->customMessages[$message] ?? $defaultMessage,
+            $vars
+        );
     }
 
     /**

@@ -1,7 +1,0 @@
-- name: 'Install project'
-  hosts: localhost
-  tasks:
-    - include_tasks: project/init-vars.yml
-    - include_tasks: project/composer-install.yml
-    - include_tasks: octobercms/key-generate.yml
-    - include_tasks: octobercms/october-install.yml

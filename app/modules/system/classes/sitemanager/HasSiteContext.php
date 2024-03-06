@@ -23,6 +23,34 @@ trait HasSiteContext
     protected $siteContext = null;
 
     /**
+     * listSiteIdsInGroup
+     */
+    public function listSiteIdsInGroup($siteId = null)
+    {
+        $site = $siteId ? $this->getSiteFromId($siteId) : $this->getSiteFromContext();
+
+        if ($groupId = $site?->group_id) {
+            return $this->listSites()->where('group_id', $groupId)->pluck('id')->all();
+        }
+
+        return $this->listSiteIds();
+    }
+
+    /**
+     * listSiteIdsInLocale
+     */
+    public function listSiteIdsInLocale($siteId = null)
+    {
+        $site = $siteId ? $this->getSiteFromId($siteId) : $this->getSiteFromContext();
+
+        if ($localeCode = $site?->hard_locale) {
+            return $this->listSites()->where('locale', $localeCode)->pluck('id')->all();
+        }
+
+        return [];
+    }
+
+    /**
      * getSiteIdFromContext
      * @return int|null
      */
@@ -35,6 +63,21 @@ trait HasSiteContext
         }
 
         return (int) $site->id;
+    }
+
+    /**
+     * getSiteCodeFromContext
+     * @return string|null
+     */
+    public function getSiteCodeFromContext()
+    {
+        $site = $this->getSiteFromContext();
+
+        if (!$site || !$site->code) {
+            return null;
+        }
+
+        return (string) $site->code;
     }
 
     /**
@@ -84,13 +127,31 @@ trait HasSiteContext
     {
         $previous = $this->siteContext;
 
-        $this->siteContext = $this->getSiteFromId($siteId);
+        $site = $this->getSiteFromId($siteId);
+
+        if ($site) {
+            $this->broadcastSiteChange($site->id);
+        }
 
         try {
+            $this->siteContext = $site;
+
             return $callback();
         }
         finally {
             $this->siteContext = $previous;
+
+            if ($previousId = $this->getSiteIdFromContext()) {
+                $this->broadcastSiteChange($previousId);
+            }
         }
+    }
+
+    /**
+     * @deprecated
+     */
+    public function listSiteIdsInContext()
+    {
+        return $this->listSiteIdsInGroup();
     }
 }

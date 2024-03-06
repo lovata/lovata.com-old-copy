@@ -2,6 +2,7 @@
 
 use Lovata\Basecode\Console\MigrateMagicForms;
 use Lovata\Basecode\Console\RemoveOldPluginsData;
+use Lovata\BaseCode\Console\ResetAdminPassword;
 use October\Rain\Argon\Argon;
 use System\Classes\PluginBase;
 use Event;
@@ -32,6 +33,7 @@ class Plugin extends PluginBase
     {
         $this->registerConsoleCommand('basecode:removeoldpluginsdata', RemoveOldPluginsData::class);
         $this->registerConsoleCommand('basecode:migratemagicforms', MigrateMagicForms::class);
+        $this->registerConsoleCommand('basecode:reset_admin_password', ResetAdminPassword::class);
     }
 
     /**

@@ -18,19 +18,16 @@ use Throwable;
 /**
  * PluginManager
  *
- * @method static PluginManager instance()
- *
  * @package october\system
  * @author Alexey Bobkov, Samuel Georges
  */
 class PluginManager
 {
-    use \October\Rain\Support\Traits\Singleton;
-
     /**
      * @var const keys for manifest storage
      */
     const MANIFEST_PLUGINS = 'plugins.all';
+    const MANIFEST_PLUGIN_HINTS = 'plugins.hints';
 
     /**
      * @var App app instance, since Plugins are an extension of a Service Provider
@@ -73,11 +70,11 @@ class PluginManager
     protected $registrationMethodCache = [];
 
     /**
-     * init initializes the plugin manager
+     * __construct this class
      */
-    protected function init()
+    public function __construct()
     {
-        $this->bindContainerObjects();
+        $this->app = App::make('app');
         $this->metaFile = cache_path('cms/disabled.php');
         $this->loadDisabled();
         $this->loadPlugins();
@@ -88,13 +85,11 @@ class PluginManager
     }
 
     /**
-     * bindContainerObjects rebinds to the container because these objects are
-     * "soft singletons" and may be lost when the IoC container reboots.
-     * This provides a way to rebuild for the purposes of unit testing.
+     * instance creates a new instance of this singleton
      */
-    public function bindContainerObjects()
+    public static function instance(): static
     {
-        $this->app = App::make('app');
+        return App::make('system.plugins');
     }
 
     /**
@@ -475,6 +470,29 @@ class PluginManager
     }
 
     /**
+     * getPluginHints returns an array of all registered hints where the key
+     * is the hint name and the value is the plugin identifier.
+     */
+    public function getPluginHints(): array
+    {
+        if (Manifest::has(self::MANIFEST_PLUGIN_HINTS)) {
+            return (array) Manifest::get(self::MANIFEST_PLUGIN_HINTS);
+        }
+
+        $hintNames = [];
+
+        foreach ($this->getPlugins() as $pluginId => $plugin) {
+            if ($hintName = $plugin->pluginDetails()['hint'] ?? null) {
+                $hintNames[$hintName] = $pluginId;
+            }
+        }
+
+        Manifest::put(self::MANIFEST_PLUGIN_HINTS, $hintNames);
+
+        return $hintNames;
+    }
+
+    /**
      * getVendorAndPluginNames returns a 2 dimensional array of vendors and their plugins.
      */
     public function getVendorAndPluginNames()
@@ -767,7 +785,7 @@ class PluginManager
             }
 
             foreach ($required as $require) {
-                if ($this->hasPlugin($require)) {
+                if (!$require || $this->hasPlugin($require)) {
                     continue;
                 }
 
@@ -915,7 +933,7 @@ class PluginManager
     {
         $manager = UpdateManager::instance();
         $manager->rollbackPlugin($id);
-        $manager->updatePlugin($id);
+        $manager->migratePlugin($id);
     }
 
     /**

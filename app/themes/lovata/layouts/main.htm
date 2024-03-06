@@ -9,7 +9,6 @@
     {# Render SEO meta tags (title, description, keywords, canonical URL, robots meta tag) #}
     {% component 'SeoToolbox' %}
     <meta charset="UTF-8">
-    <!--{% placeholder seo_metadata %}-->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="icon" type="image/png" href="{{ 'assets/img/favicon-32x32.png'|theme }}" sizes="32x32">
@@ -20,8 +19,6 @@
     {{ SeoToolbox.getHeadEnd()|raw }}
 </head>
 <body class="{{ this.page.id }}-page">
-{{ input('test') }}
-
     {# Render metric code after body tag #}
     {{ SeoToolbox.getBodyBegin()|raw }}
     {% partial 'components/aside/aside' %}

@@ -1,4 +1,4 @@
 <?php return array (
-  'Bedard.AnalyticsExtension' => false,
+  'BizMark.Quicksilver' => true,
   'Lovata.FeedbackForCrm' => false,
 );

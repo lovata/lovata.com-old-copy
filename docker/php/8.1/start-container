@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 role=${CONTAINER_ROLE:-app}
+path=${APP_CODE_PATH_CONTAINER}
 
 set -e
 
@@ -28,9 +29,9 @@ elif [ "$role" = "schedule" ]; then
     done
     while [ true ]
     do
-        gosu $WWWUSER php /var/www/html/artisan schedule:run --verbose --no-interaction & sleep 60
+        gosu $WWWUSER php $path/artisan schedule:run --verbose --no-interaction & sleep 60
     done
 elif [ "$role" = "queue" ]; then
     echo "Running the queue..."
-    gosu $WWWUSER php /var/www/html/artisan horizon
+    gosu $WWWUSER php $path/artisan horizon
 fi

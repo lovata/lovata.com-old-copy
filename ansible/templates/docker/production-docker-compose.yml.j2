@@ -12,6 +12,7 @@ services:
         image: app/php:${PHP_VERSION}
         environment:
             CONTAINER_ROLE: 'app'
+            APP_CODE_PATH_CONTAINER: '${APP_CODE_PATH_CONTAINER}'
             COMPOSE_INTERACTIVE_NO_CLI: 1
             LARAVEL_SAIL: 1
             WWWUSER: '${WWWUSER}'
@@ -41,6 +42,7 @@ services:
         image: main/php:${PHP_VERSION}
         environment:
             CONTAINER_ROLE: 'schedule'
+            APP_CODE_PATH_CONTAINER: '${APP_CODE_PATH_CONTAINER}'
             COMPOSE_INTERACTIVE_NO_CLI: 1
             LARAVEL_SAIL: 1
             WWWUSER: '${WWWUSER}'
@@ -65,6 +67,7 @@ services:
         image: main/php:${PHP_VERSION}
         environment:
             CONTAINER_ROLE: 'queue'
+            APP_CODE_PATH_CONTAINER: '${APP_CODE_PATH_CONTAINER}'
             COMPOSE_INTERACTIVE_NO_CLI: 1
             LARAVEL_SAIL: 1
             WWWUSER: '${WWWUSER}'

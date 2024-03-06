@@ -20,4 +20,4 @@
         force: true
 
     - name: 'Copy snippets'
-      command: 'cp {{ PATH_TO_PROJECT_FOLDER }}/docker/nginx/config/snippets/* /home/app_user/project/main/docker/nginx/config/snippets/lovata.com/'
+      command: 'cp -r {{ PATH_TO_PROJECT_FOLDER }}/docker/nginx/config/snippets/* /home/app_user/project/main/docker/nginx/config/snippets/lovata.com/'

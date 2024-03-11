@@ -21,3 +21,6 @@
 
     - name: 'Copy snippets'
       raw: 'cp -r {{ PATH_TO_PROJECT_FOLDER }}/docker/nginx/config/snippets/* /home/app_user/project/main/docker/nginx/config/snippets/lovata.com/'
+
+    - name: 'Copy SSL'
+      raw: 'cp -r {{ PATH_TO_PROJECT_FOLDER }}/docker/nginx/ssl/* /home/app_user/project/main/docker/nginx/ssl/lovata.com/'

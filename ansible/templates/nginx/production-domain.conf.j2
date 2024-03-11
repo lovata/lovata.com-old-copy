@@ -1,11 +1,21 @@
 server {
+    listen               80;
+    listen               443 ssl;
+    server_name          www.lovata.com;
+    ssl_certificate /etc/nginx/ssl/lovata.com/server.crt;
+    ssl_certificate_key /etc/nginx/ssl/lovata.com/private.key;
+
+    return 301 $scheme://lovata.com$request_uri;
+}
+
+server {
     listen 80;
 
     # For https
-    # listen 443 ssl;
-    # listen [::]:443 ssl default_server ipv6only=on;
-    # ssl_certificate /etc/nginx/ssl/default.crt;
-    # ssl_certificate_key /etc/nginx/ssl/default.key;
+    listen 443 ssl;
+    listen [::]:443 ssl default_server ipv6only=on;
+    ssl_certificate /etc/nginx/ssl/lovata.com/server.crt;
+    ssl_certificate_key /etc/nginx/ssl/lovata.com/private.key;
 
     server_name lovata.com;
 
@@ -18,9 +28,9 @@ server {
     }
 
     # Redirect to https
-    #if ($scheme = http) {
-    #    return 301 https://$server_name$request_uri;
-    #}
+    if ($scheme = http) {
+        return 301 https://$server_name$request_uri;
+    }
 
     root /var/www/html/lovata.com_old/app;
     index index.php index.html index.htm;

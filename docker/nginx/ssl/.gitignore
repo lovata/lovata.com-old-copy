@@ -1,4 +1,4 @@
 *
 !.gitignore
 !private.key
-!server.csr
+!server.crt

@@ -25,8 +25,12 @@ services:
             - '${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}'
             - './temp:/home/sail/temp'
         networks:
-            - frontend
-            - backend
+            lovata_frontend:
+                aliases:
+                    - {{ SHORT_PROJECT_NAME }}_backend_app
+            lovata_backend:
+                aliases:
+                    - {{ SHORT_PROJECT_NAME }}_backend_app
         logging:
             driver: "json-file"
             options:
@@ -50,7 +54,9 @@ services:
         volumes:
             - '${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}'
         networks:
-            - backend
+            lovata_backend:
+                aliases:
+                    - {{ SHORT_PROJECT_NAME }}_backend_app
         logging:
             driver: "json-file"
             options:
@@ -83,7 +89,7 @@ services:
                 max-file: "3"
 {% endif %}
 networks:
-    frontend:
-        driver: bridge
-    backend:
-        driver: bridge
+    lovata_frontend:
+        external: true
+    lovata_backend:
+        external: true

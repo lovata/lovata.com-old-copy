@@ -154,7 +154,9 @@ services:
             MYSQL_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ALLOW_EMPTY_PASSWORD: 1
         volumes:
-            - ${DATA_PATH_HOST}/mysql:/var/lib/mysql'
+            - type: bind
+              source: ${DATA_PATH_HOST}/mysql
+              target: /var/lib/mysql
         networks:
             - backend
         logging:
@@ -222,8 +224,10 @@ services:
 {% endif %}
 networks:
     frontend:
+        name: lovata_frontend
         driver: bridge
     backend:
+        name: lovata_backend
         driver: bridge
 volumes:
 {%if DATABASE_TYPE == 'mysql' %}
